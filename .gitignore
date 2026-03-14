@@ -1,4 +1,5 @@
 slides/
 .idea/
 *.iml
-*/out/
+docs/
+out/
