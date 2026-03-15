@@ -1,0 +1,1 @@
+<img src="solution.png" alt="deadlockempire.github.io completion screenshot">
