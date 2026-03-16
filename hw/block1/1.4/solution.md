@@ -4,7 +4,7 @@ Let's assume that we have a task, that takes time `t`.
 We can change performance of some part `ζ` of our task by the scale of `ξ`.
 We can calculate total "speedup" `s` of our change using the following formula.
 
-```math
+```
 t = (1-ζ)t + ζt
 t' = (1-ζ)t + ζξt
 s = t/t' = 1/((1-ζ) + ζξ)
@@ -29,12 +29,13 @@ As `ξ` is time-scaling factor, we actually need ξ<sup>-1</sup> which is equal 
 **Answer:** `5`
 
 ### Third question
-```math
+```
 s == 10
-ξ = 0.01
+ξ = 0.01  
 ζ == (1-s)/(s*(ξ-1))
 ->
 ζ == -9 / (10 * -0.99) = 1 / (1.1) = 10/11
+
 ```
 
 To achive such scenario we need to have a program, which is `1/11` serial and `10/11` parallel, working on 100 CPUs
