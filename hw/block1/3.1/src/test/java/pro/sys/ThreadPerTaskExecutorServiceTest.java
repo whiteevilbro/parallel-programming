@@ -86,6 +86,7 @@ class ThreadPerTaskExecutorServiceTest {
         assertThrows(ExecutionException.class, future::get);
     }
 
+    @Test
     void testMultipleTasksWithException() {
         ThreadPerTaskExecutorService service = new ThreadPerTaskExecutorService(threadFactory);
 
@@ -107,7 +108,6 @@ class ThreadPerTaskExecutorServiceTest {
         }
 
         for (int i = 0; i < N; i++) {
-
             try {
                 if (i != N / 2) {
                     assertEquals(numbers[i], (Integer) futures.get(i).get());
@@ -120,5 +120,20 @@ class ThreadPerTaskExecutorServiceTest {
             }
         }
 
+    }
+
+    @Test
+    void testNested() {
+        ThreadPerTaskExecutorService service = new ThreadPerTaskExecutorService(threadFactory);
+
+        JoinFuture<Integer> future1 = service.submit(() -> 42);
+        JoinFuture<Integer> future2 = service.submit(() -> 1984);
+        JoinFuture<Integer> future = service.submit(() -> future1.get() + future2.get());
+
+        try {
+            assertEquals(42 + 1984, future.get());
+        } catch (ExecutionException ex) {
+            fail();
+        }
     }
 }
