@@ -13,17 +13,10 @@ public class JoinFuture<T> {
      * @return T result of the task computation.
      * @throws ExecutionException ex if task has thrown an exception or has been interrupted. Causing exception is listed as cause of an ex exception.
      */
-    public T get() throws ExecutionException {
+    public T get() throws ExecutionException, InterruptedException {
+        thread.join();
         if (exception != null)
             throw new ExecutionException(exception);
-        try {
-            thread.join();
-        }
-        catch (InterruptedException e) {
-            try {Thread.sleep(1000);} catch (InterruptedException ignored) {}
-            exception = e;
-            throw new ExecutionException(e);
-        }
         return result;
     }
 

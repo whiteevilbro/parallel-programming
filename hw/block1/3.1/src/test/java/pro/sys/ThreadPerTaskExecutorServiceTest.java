@@ -51,6 +51,7 @@ class ThreadPerTaskExecutorServiceTest {
             assertEquals(9, future.get());
         } catch (ExecutionException e) {
             fail(e);
+        } catch (InterruptedException ignored) {
         }
     }
 
@@ -75,6 +76,7 @@ class ThreadPerTaskExecutorServiceTest {
                 assertEquals(numbers[i], futures.get(i).get());
             } catch (ExecutionException e) {
                 fail(e);
+            } catch (InterruptedException ignored) {
             }
         }
 
@@ -119,6 +121,7 @@ class ThreadPerTaskExecutorServiceTest {
                 }
             } catch (ExecutionException e) {
                 fail(e);
+            } catch (InterruptedException ignored) {
             }
         }
 
@@ -136,6 +139,7 @@ class ThreadPerTaskExecutorServiceTest {
             assertEquals(42 + 1984, future.get());
         } catch (ExecutionException ex) {
             fail();
+        } catch (InterruptedException ignored) {
         }
     }
 
@@ -163,6 +167,7 @@ class ThreadPerTaskExecutorServiceTest {
 
         } catch (ExecutionException e) {
             fail();
+        } catch (InterruptedException ignored) {
         }
     }
 
@@ -177,7 +182,7 @@ class ThreadPerTaskExecutorServiceTest {
         Thread threadA = threadFactory.newThread(() -> {
             try {
                 really_long.get();
-            } catch (ExecutionException ignored) {
+            } catch (ExecutionException | InterruptedException ignored) {
             }
         });
         threadA.start();
@@ -187,6 +192,7 @@ class ThreadPerTaskExecutorServiceTest {
             assertNull(really_long.get());
         } catch (ExecutionException e) {
             fail();
+        } catch (InterruptedException ignored) {
         }
 
         try {
@@ -199,6 +205,7 @@ class ThreadPerTaskExecutorServiceTest {
             assertNull(really_long.get());
         } catch (ExecutionException e) {
             fail();
+        } catch (InterruptedException ignored) {
         }
 
     }
