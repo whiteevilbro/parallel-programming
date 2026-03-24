@@ -20,6 +20,7 @@ public class JoinFuture<T> {
             thread.join();
         }
         catch (InterruptedException e) {
+            try {Thread.sleep(1000);} catch (InterruptedException ignored) {}
             exception = e;
             throw new ExecutionException(e);
         }

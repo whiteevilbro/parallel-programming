@@ -3,7 +3,9 @@ package pro.sys;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadFactory;
@@ -135,5 +137,69 @@ class ThreadPerTaskExecutorServiceTest {
         } catch (ExecutionException ex) {
             fail();
         }
+    }
+
+    @Test
+    void testDifferent() {
+        ThreadPerTaskExecutorService service = new ThreadPerTaskExecutorService(threadFactory);
+        final int N = 50;
+        ArrayList<JoinFuture<Long>> futures = new ArrayList<>(N);
+
+        for (int i = 0; i < N; i++) {
+            futures.add(service.submit(() -> Thread.currentThread().getId()));
+        }
+
+        Set<Long> ids = new HashSet<>(N * 4 / 3);
+        try {
+
+            for (int i = 0; i < N; i++) {
+                Long id = futures.get(i).get();
+                if (!ids.contains(id)) {
+                    ids.add(id);
+                } else {
+                    fail();
+                }
+            }
+
+        } catch (ExecutionException e) {
+            fail();
+        }
+    }
+
+    @Test
+    void testLogicErrorBuggyBehaviour() {
+        ThreadPerTaskExecutorService service = new ThreadPerTaskExecutorService(threadFactory);
+        JoinFuture<Void> really_long = service.submit(() -> {
+            Thread.sleep(100);
+            return null;
+        });
+
+        Thread threadA = threadFactory.newThread(() -> {
+            try {
+                really_long.get();
+            } catch (ExecutionException ignored) {
+            }
+        });
+        threadA.start();
+        threadA.interrupt();
+
+        try {
+            assertNull(really_long.get());
+        } catch (ExecutionException e) {
+            fail();
+        }
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ignored) {
+        }
+
+        try {
+            assertDoesNotThrow(really_long::get);
+            assertNull(really_long.get());
+        } catch (ExecutionException e) {
+            fail();
+        }
+
     }
 }
