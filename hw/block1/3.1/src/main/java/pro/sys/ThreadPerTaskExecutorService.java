@@ -4,6 +4,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadFactory;
 
 final public class ThreadPerTaskExecutorService {
+
     final private ThreadFactory threadFactory;
 
     public ThreadPerTaskExecutorService(ThreadFactory threadFactory) {
@@ -15,7 +16,7 @@ final public class ThreadPerTaskExecutorService {
      * Submit task for computation.
      *
      * @param task Callable<? extends T> representing task.
-     * @param <T> task return type.
+     * @param <T>  task return type.
      * @return JoinFuture<T> object, representing will-be-result of the task computation.
      */
     public <T> JoinFuture<T> submit(Callable<? extends T> task) {
