@@ -11,6 +11,10 @@ public class SingleThreadExecutorService {
     Thread worker;
     LinkedBlockingDeque<CondVarFuture<?>> futureQueue;
 
+
+    /**
+     * Method representing job of a worker thread.
+     */
     private void workerJob() {
         CondVarFuture<?> future;
         do {
@@ -27,6 +31,14 @@ public class SingleThreadExecutorService {
         futureQueue = new LinkedBlockingDeque<>();
     }
 
+    /**
+     * Submits a value-returning task for execution.
+     *
+     * @param task task to submit.
+     * @param <T> return type of task.
+     * @return CondVarFuture object, representing pending result of the task.
+     * @throws InterruptedException if current thread was interrupted.
+     */
     public <T> CondVarFuture<T> submit(Callable<T> task) throws InterruptedException {
         CondVarFuture<T> future = new CondVarFuture<>(task);
         futureQueue.put(future);

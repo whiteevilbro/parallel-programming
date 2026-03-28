@@ -23,6 +23,13 @@ public class CondVarFuture<T> {
         done = false;
     }
 
+    /**
+     * Waits for computation to complete, retrieves its result
+     *
+     * @return result of the computation
+     * @throws ExecutionException if computation thrown something
+     * @throws InterruptedException if current thread was interrupted
+     */
     public T get() throws ExecutionException, InterruptedException {
         lock.lock();
         try {
@@ -32,11 +39,22 @@ public class CondVarFuture<T> {
         } finally {lock.unlock();}
     }
 
+    /**
+     * Checks if computation is done. Computation is considered done if it has returned result or has thrown an exception.
+     *
+     * @return status of computation.
+     */
     public boolean isDone() {
         lock.lock();
         try {return done;} finally {lock.unlock();}
     }
 
+
+    /**
+     * Runs underlying computation, sets state of Future accordingly.
+     *
+     * @return true if current thread should continue execution. False if current thread should terminate.
+     */
     boolean run() {
         try {Thread.sleep(10);} catch (InterruptedException e) {Thread.currentThread().interrupt();}
         lock.lock();
