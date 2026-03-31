@@ -45,7 +45,7 @@ public class SingleThreadExecutorService {
     public <T> CondVarFuture<T> submit(Callable<T> task) throws InterruptedException {
         CondVarFuture<T> future = new CondVarFuture<>(task);
         futureQueue.put(future);
-        if (worker == null || !worker.isAlive()) {
+        if (worker == null) {
             worker = threadFactory.newThread(this::workerJob);
             worker.start();
         }
