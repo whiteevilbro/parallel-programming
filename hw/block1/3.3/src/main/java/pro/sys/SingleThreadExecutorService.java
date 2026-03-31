@@ -12,6 +12,11 @@ public class SingleThreadExecutorService {
     LinkedBlockingDeque<CondVarFuture<?>> futureQueue;
 
 
+    public SingleThreadExecutorService(ThreadFactory threadFactory) {
+        this.threadFactory = threadFactory;
+        futureQueue = new LinkedBlockingDeque<>();
+    }
+
     /**
      * Method representing job of a worker thread.
      */
@@ -23,19 +28,17 @@ public class SingleThreadExecutorService {
             } catch (InterruptedException e) {break;}
         } while (future.run());
         worker = threadFactory.newThread(this::workerJob);
+        try {Thread.sleep(100);} catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         worker.start();
-    }
-
-    public SingleThreadExecutorService(ThreadFactory threadFactory) {
-        this.threadFactory = threadFactory;
-        futureQueue = new LinkedBlockingDeque<>();
     }
 
     /**
      * Submits a value-returning task for execution.
      *
      * @param task task to submit.
-     * @param <T> return type of task.
+     * @param <T>  return type of task.
      * @return CondVarFuture object, representing pending result of the task.
      * @throws InterruptedException if current thread was interrupted.
      */

@@ -33,6 +33,9 @@ public class CondVarFuture<T> {
     public T get() throws ExecutionException, InterruptedException {
         lock.lock();
         try {
+            // throwable != null -!> done since future throwing throwable isn't marked as done
+            // !done -!> "future has ended execution" because of the exact same reason
+            // done || throwable != null is effectively "future has ended" condition
             while (!done && throwable == null) {condition.await();}
             if (throwable != null) {throw new ExecutionException(throwable);}
             return result;
@@ -61,16 +64,14 @@ public class CondVarFuture<T> {
         try {
             result = callable.call();
             done = true;
-            condition.signalAll();
         } catch (Exception e) {
             throwable = e;
             done = true;
-            condition.signalAll();
         } catch (Throwable t) {
             throwable = t;
-            condition.signalAll();
             return false;
         } finally {
+            condition.signalAll();
             lock.unlock();
         }
         return true;

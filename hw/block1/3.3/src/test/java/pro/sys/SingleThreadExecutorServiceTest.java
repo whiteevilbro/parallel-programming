@@ -198,4 +198,29 @@ class SingleThreadExecutorServiceTest {
             fail();
         }
     }
+
+    @Test
+    @Timeout(5)
+    void testWorkerAccess() {
+
+        SingleThreadExecutorService service = new SingleThreadExecutorService(threadFactory);
+
+        CondVarFuture<Integer> future1, future2;
+        try {
+            future1 = service.submit(() -> 42);
+
+            service.worker.interrupt();
+            Thread.sleep(10);
+            long id1 = service.worker.getId();
+            future2 = service.submit(() -> 84);
+            long id2 = service.worker.getId();
+
+            assertEquals(id1, id2);
+
+        } catch (InterruptedException ignored) {
+            fail();
+            return;
+        }
+
+    }
 }
