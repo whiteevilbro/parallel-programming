@@ -52,14 +52,14 @@ public class SingleThreadExecutorService {
         CondVarFuture<T> future = condVarFutureFactory.newCondVarFuture(task);
         futureQueue.put(future);
         workerLock.lock();
-//        try {
+        try {
             if (worker == null) {
                 worker = threadFactory.newThread(this::workerJob);
                 worker.start();
             }
-//        } finally {
-//            workerLock.unlock();
-//        }
+        } finally {
+            workerLock.unlock();
+        }
         return future;
     }
 }
