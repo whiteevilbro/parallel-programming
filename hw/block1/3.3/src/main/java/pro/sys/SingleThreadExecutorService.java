@@ -3,17 +3,23 @@ package pro.sys;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class SingleThreadExecutorService {
 
     final ThreadFactory threadFactory;
+    final CondVarFutureFactory condVarFutureFactory;
+    final Lock workerLock = new ReentrantLock();
 
     Thread worker;
     LinkedBlockingDeque<CondVarFuture<?>> futureQueue;
 
+    protected void hook() {}
 
-    public SingleThreadExecutorService(ThreadFactory threadFactory) {
+    public SingleThreadExecutorService(ThreadFactory threadFactory, CondVarFutureFactory condVarFutureFactory) {
         this.threadFactory = threadFactory;
+        this.condVarFutureFactory = condVarFutureFactory;
         futureQueue = new LinkedBlockingDeque<>();
     }
 
@@ -22,16 +28,16 @@ public class SingleThreadExecutorService {
      */
     private void workerJob() {
         CondVarFuture<?> future;
-        do {
-            try {
+        try {
+            do {
                 future = futureQueue.take();
-            } catch (InterruptedException e) {break;}
-        } while (future.run());
-        worker = threadFactory.newThread(this::workerJob);
-        try {Thread.sleep(100);} catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            } while (future.run());
+        } catch (InterruptedException ignored) {
+        } finally {
+            worker = threadFactory.newThread(this::workerJob);
+            hook();
+            worker.start();
         }
-        worker.start();
     }
 
     /**
@@ -43,12 +49,17 @@ public class SingleThreadExecutorService {
      * @throws InterruptedException if current thread was interrupted.
      */
     public <T> CondVarFuture<T> submit(Callable<T> task) throws InterruptedException {
-        CondVarFuture<T> future = new CondVarFuture<>(task);
+        CondVarFuture<T> future = condVarFutureFactory.newCondVarFuture(task);
         futureQueue.put(future);
-        if (worker == null) {
-            worker = threadFactory.newThread(this::workerJob);
-            worker.start();
-        }
+        workerLock.lock();
+//        try {
+            if (worker == null) {
+                worker = threadFactory.newThread(this::workerJob);
+                worker.start();
+            }
+//        } finally {
+//            workerLock.unlock();
+//        }
         return future;
     }
 }

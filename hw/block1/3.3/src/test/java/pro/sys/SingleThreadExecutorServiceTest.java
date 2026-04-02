@@ -6,7 +6,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -18,14 +22,57 @@ class BasicThreadFactory implements ThreadFactory {
     }
 }
 
+class BasicTestingVarFutureFactory implements CondVarFutureFactory {
+
+    @Override
+    public <T> CondVarFuture<T> newCondVarFuture(Callable<T> task) {
+        return new TestingCondVarFuture<>(task);
+    }
+}
+
+class TestingSingleThreadExecutorService extends SingleThreadExecutorService {
+
+    public TestingSingleThreadExecutorService(ThreadFactory threadFactory,
+        CondVarFutureFactory condVarFutureFactory) {
+        super(threadFactory, condVarFutureFactory);
+    }
+
+    @Override
+    protected void hook() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}
+
+class TestingCondVarFuture<T> extends CondVarFuture<T> {
+
+    TestingCondVarFuture(Callable<T> callable) {
+        super(callable);
+    }
+
+    @Override
+    protected void hook() {
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}
+
 class SingleThreadExecutorServiceTest {
 
     ThreadFactory threadFactory = new BasicThreadFactory();
+    CondVarFutureFactory condVarFutureFactory = new BasicTestingVarFutureFactory();
 
     @Test
     @Timeout(2)
     void testOneTask() {
-        SingleThreadExecutorService service = new SingleThreadExecutorService(threadFactory);
+        SingleThreadExecutorService service = new TestingSingleThreadExecutorService(threadFactory,
+            condVarFutureFactory);
 
         CondVarFuture<Integer> future;
         try {
@@ -50,7 +97,8 @@ class SingleThreadExecutorServiceTest {
         int[] numbers = new int[N];
         ArrayList<CondVarFuture<Integer>> futures = new ArrayList<>(N);
 
-        SingleThreadExecutorService service = new SingleThreadExecutorService(threadFactory);
+        SingleThreadExecutorService service = new TestingSingleThreadExecutorService(threadFactory,
+            condVarFutureFactory);
 
         for (int i = 0; i < N; i++) {
             int a = random.nextInt();
@@ -71,7 +119,8 @@ class SingleThreadExecutorServiceTest {
     @Test
     @Timeout(5)
     void testSame() {
-        SingleThreadExecutorService service = new SingleThreadExecutorService(threadFactory);
+        SingleThreadExecutorService service = new TestingSingleThreadExecutorService(threadFactory,
+            condVarFutureFactory);
 
         CondVarFuture<Long> future1;
         CondVarFuture<Long> future2;
@@ -93,7 +142,8 @@ class SingleThreadExecutorServiceTest {
     @Test
     @Timeout(2)
     void testException() {
-        SingleThreadExecutorService service = new SingleThreadExecutorService(threadFactory);
+        SingleThreadExecutorService service = new TestingSingleThreadExecutorService(threadFactory,
+            condVarFutureFactory);
 
         CondVarFuture<Integer> future;
         try {
@@ -109,7 +159,8 @@ class SingleThreadExecutorServiceTest {
     @Test
     @Timeout(5)
     void testLongException() {
-        SingleThreadExecutorService service = new SingleThreadExecutorService(threadFactory);
+        SingleThreadExecutorService service = new TestingSingleThreadExecutorService(threadFactory,
+            condVarFutureFactory);
 
         CondVarFuture<Integer> future1;
         CondVarFuture<Integer> future2;
@@ -133,7 +184,8 @@ class SingleThreadExecutorServiceTest {
     @Test
     @Timeout(5)
     void testThrowable() {
-        SingleThreadExecutorService service = new SingleThreadExecutorService(threadFactory);
+        SingleThreadExecutorService service = new TestingSingleThreadExecutorService(threadFactory,
+            condVarFutureFactory);
 
         CondVarFuture<Integer> future1;
         CondVarFuture<Integer> future2;
@@ -159,7 +211,8 @@ class SingleThreadExecutorServiceTest {
     @Test
     @Timeout(5)
     void testMultipleReaders() {
-        SingleThreadExecutorService service = new SingleThreadExecutorService(threadFactory);
+        SingleThreadExecutorService service = new TestingSingleThreadExecutorService(threadFactory,
+            condVarFutureFactory);
 
         CondVarFuture<Integer> future;
         try {
@@ -202,8 +255,8 @@ class SingleThreadExecutorServiceTest {
     @Test
     @Timeout(5)
     void testWorkerAccess() {
-
-        SingleThreadExecutorService service = new SingleThreadExecutorService(threadFactory);
+        SingleThreadExecutorService service = new TestingSingleThreadExecutorService(threadFactory,
+            condVarFutureFactory);
 
         CondVarFuture<Integer> future1, future2;
         try {
@@ -219,8 +272,36 @@ class SingleThreadExecutorServiceTest {
 
         } catch (InterruptedException ignored) {
             fail();
-            return;
         }
 
+    }
+
+    @Test
+    @Timeout(5)
+    void testSimultaneousSubmit() {
+        SingleThreadExecutorService service = new TestingSingleThreadExecutorService(threadFactory,
+            condVarFutureFactory);
+
+        CountDownLatch latch1 = new CountDownLatch(1);
+        CountDownLatch latch2 = new CountDownLatch(1);
+        BlockingQueue<CondVarFuture<Long>> queue = new LinkedBlockingDeque<>(2);
+        Thread threadA = threadFactory.newThread(() -> {
+            try {
+                latch2.countDown();
+                latch1.await();
+                queue.put(service.submit(() -> Thread.currentThread().getId()));
+            } catch (InterruptedException e) {Thread.currentThread().interrupt();}
+        });
+        threadA.start();
+
+        try {
+            latch2.await();
+            latch1.countDown();
+            queue.put(service.submit(() -> Thread.currentThread().getId()));
+            threadA.join();
+            assertEquals(queue.take().get(), queue.take().get());
+        } catch (InterruptedException | ExecutionException e) {
+            fail();
+        }
     }
 }

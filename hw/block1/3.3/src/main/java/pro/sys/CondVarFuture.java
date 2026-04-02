@@ -16,6 +16,8 @@ public class CondVarFuture<T> {
     T result;
     Throwable throwable;
 
+    protected void hook() {}
+
     CondVarFuture(Callable<T> callable) {
         this.callable = callable;
         lock = new ReentrantLock();
@@ -59,7 +61,7 @@ public class CondVarFuture<T> {
      * @return true if current thread should continue execution. False if current thread should terminate.
      */
     boolean run() {
-        try {Thread.sleep(10);} catch (InterruptedException e) {Thread.currentThread().interrupt();}
+        hook();
         lock.lock();
         try {
             result = callable.call();
