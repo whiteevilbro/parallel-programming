@@ -15,13 +15,14 @@ public class SingleThreadExecutorService {
     Thread worker;
     LinkedBlockingDeque<CondVarFuture<?>> futureQueue;
 
-    protected void hook() {}
-
-    public SingleThreadExecutorService(ThreadFactory threadFactory, CondVarFutureFactory condVarFutureFactory) {
+    public SingleThreadExecutorService(ThreadFactory threadFactory,
+        CondVarFutureFactory condVarFutureFactory) {
         this.threadFactory = threadFactory;
         this.condVarFutureFactory = condVarFutureFactory;
         futureQueue = new LinkedBlockingDeque<>();
     }
+
+    protected void hook() {}
 
     /**
      * Method representing job of a worker thread.
@@ -34,9 +35,12 @@ public class SingleThreadExecutorService {
             } while (future.run());
         } catch (InterruptedException ignored) {
         } finally {
-            worker = threadFactory.newThread(this::workerJob);
-            hook();
-            worker.start();
+            workerLock.lock();
+            try {
+                worker = threadFactory.newThread(this::workerJob);
+                hook();
+                worker.start();
+            } finally {workerLock.unlock();}
         }
     }
 
