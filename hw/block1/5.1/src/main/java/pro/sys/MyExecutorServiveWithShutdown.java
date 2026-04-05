@@ -38,12 +38,14 @@ class MyExecutorServiceWithShutdown {
                         throw new CancellationException();
                     }
                 }
-                T result = task.call();
-                synchronized (this) {
-                    executing.remove(task);
-                    tryTerminate();
+                try {
+                    return task.call();
+                } finally {
+                    synchronized (this) {
+                        executing.remove(task);
+                        tryTerminate();
+                    }
                 }
-                return result;
             });
         }
 
