@@ -180,4 +180,21 @@ class MyExecutorServiceWithShutdownTest {
         }
         assertTrue(service.isTerminated());
     }
+
+    @Test
+    @Timeout(5)
+    void testShutdownAfterException() {
+        MyExecutorServiceWithShutdown service = new MyExecutorServiceWithShutdown(
+            new MyExecutorServiceImplementation());
+
+        MyFuture<Integer> future = service.submit(() -> {
+            throw new RuntimeException();
+        });
+
+        try {
+            Thread.sleep(100);
+            service.shutdown();
+            service.awaitTermination();
+        } catch (InterruptedException e) {fail();}
+    }
 }
