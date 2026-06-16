@@ -3,7 +3,7 @@
 ## Description
 
 Assume you have the following interfaces implemented (e.g. from task 3.1)
-```
+```java
 interface MyFuture<V> {
   /**
    * Waits if necessary for the computation to complete, and then retrieves its result.
@@ -37,59 +37,60 @@ Implement the following wrapper class
 ```java
 class MyExecutorServiceWithShutdown {
 
-  private final MyExecutorService service;
+    private final MyExecutorService service;
 
-  public MyExecutorServiceWithShutdown(MyExecutorService service) { 
-    this.service = service;
-    ...
-  }
+    public MyExecutorServiceWithShutdown(MyExecutorService service) {
+        this.service = service;
+        // ...
+    }
 
-  /**
-   * Forwarder to `this.service.submit`.
-   * 
-   * Throws `IllegalArgumentException` if user tries to submit task after `shutdown`.
-  */
-  <T> MyFuture<T> submit(Callable<T> task);
+    /**
+     * Forwarder to `this.service.submit`.
+     *
+     * Throws `IllegalArgumentException` if user tries to submit task after `shutdown`.
+     */
+    <T> MyFuture<T> submit(Callable<T> task);
 
-  /**
-   * Initiates an orderly shutdown in which previously submitted tasks are executed, but no new tasks will be accepted. 
-   * Invocation has no additional effect if already shut down.
-   * 
-   * This method does not wait for previously submitted tasks to complete execution. Use `awaitTermination` to do that.
-   *
-  */  
-  void shutdown();
+    /**
+     * Initiates an orderly shutdown in which previously submitted tasks are executed, but no new tasks will be accepted. 
+     * Invocation has no additional effect if already shut down.
+     *
+     * This method does not wait for previously submitted tasks to complete execution. Use `awaitTermination` to do that.
+     *
+     */
+    void shutdown();
 
-  /**
-   * Returns true if this executor has been shut down.
-   * 
-   * True does not mean all submitted tasks has been completed. Use `isTerminated` to check that.
-   *
-  */
-  boolean isShutdown();
+    /**
+     * Returns true if this executor has been shut down.
+     *
+     * True does not mean all submitted tasks has been completed. Use `isTerminated` to check that.
+     *
+     */
+    boolean isShutdown();
 
-  /**
-   * Returns true if all tasks have completed following shut down.
-   * Note that isTerminated is never true unless either shutdown or shutdownNow was called first.  
-   * 
-  */
-  boolean isTerminated();
+    /**
+     * Returns true if all tasks have completed following shut down.
+     * Note that isTerminated is never true unless either shutdown or shutdownNow was called first.  
+     *
+     */
+    boolean isTerminated();
 
-  /**
-   * Forbids submission of new tasks (equivalent to `shutdown`), halts the processing of waiting tasks and 
-   * returns a list of the tasks that were awaiting execution.
-   * 
-   * This method does not wait for actively executing tasks to terminate. Any already executing task **will not** be returned
-   * by this method. Use `awaitTermination` to ensure all tasks are finished.
-   * 
-  */
-  List<Callable<?>> shutdownNow();
+    /**
+     * Forbids submission of new tasks (equivalent to `shutdown`), halts the processing of waiting tasks and 
+     * returns a list of the tasks that were awaiting execution.
+     *
+     * This method does not wait for actively executing tasks to terminate. Any already executing task **will not** be returned
+     * by this method. Use `awaitTermination` to ensure all tasks are finished.
+     *
+     */
+    List<Callable<?>> shutdownNow();
 
-  /**
-   * Blocks until all tasks have completed execution after a shutdown request.
-   *
-  */ 
-  boolean awaitTermination();
+    /**
+     * Blocks until all tasks have completed execution after a shutdown request.
+     *
+     */
+    boolean awaitTermination();
+}
 ```
 
 Please use concurrent state machine pattern to properly implement this class.
